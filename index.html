@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Report Promotor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>tailwind.config = { darkMode: 'media' }</script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s; -webkit-tap-highlight-color: transparent; }
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #0b0f1a; color: #cbd5e1; }
+            .glass-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(51, 65, 85, 0.5); }
+        }
+        @media (prefers-color-scheme: light) {
+            body { background-color: #f1f5f9; color: #1e293b; }
+            .glass-card { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        }
+
+        /* RE-BALANCING SIZES */
+        .stat-value { font-size: 1.75rem !important; font-weight: 800; line-height: 1.2; } /* Angka Card */
+        .stat-ach { font-size: 2.5rem !important; font-weight: 800; line-height: 1; }    /* Persen Card */
+        
+        /* Table Text: Biar lebih manusiawi ukurannya */
+        .t-main { font-size: 0.85rem !important; font-weight: 700; line-height: 1.2; } 
+        .t-sub { font-size: 0.7rem !important; font-weight: 600; opacity: 0.5; text-transform: uppercase; }
+
+        .loader { width: 40px; height: 40px; border: 4px solid #3b82f6; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #dashboardMain { opacity: 0; transition: opacity 0.5s ease; }
+        select { -webkit-appearance: none; appearance: none; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+
+        /* Mobile Adjustment */
+        @media (max-width: 640px) {
+            .stat-value { font-size: 1.3rem !important; }
+            .stat-ach { font-size: 1.8rem !important; }
+            .t-main { font-size: 0.75rem !important; }
+        }
+    </style>
+</head>
+<body class="p-3 md:p-8 relative">
+
+    <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-500">
+        <span class="loader mb-4"></span>
+        <p class="text-blue-500 font-black tracking-widest text-[10px] uppercase animate-pulse">Synchronizing Data...</p>
+    </div>
+
+    <div id="dashboardMain" class="container mx-auto space-y-6 md:space-y-8">
+        <header class="flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+                <i data-lucide="layout-dashboard" class="text-blue-500 w-7 h-7"></i>
+                <h1 class="text-xl md:text-2xl font-black tracking-tighter uppercase">Report <span class="text-blue-500">Promotor</span></h1>
+            </div>
+            <div class="grid grid-cols-2 gap-2 w-full">
+                <select id="filterBulan" onchange="handleFilterChange()" class="bg-white dark:bg-slate-800 border dark:border-slate-700 p-3 rounded-2xl text-[11px] font-bold outline-none"></select>
+                <select id="filterPIC" onchange="handleFilterChange()" class="bg-white dark:bg-slate-800 border dark:border-slate-700 p-3 rounded-2xl text-[11px] font-bold outline-none"></select>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 md:grid-cols-2 gap-3 md:col-span-2">
+                <div class="glass-card p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem]">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Actual Sell Out</p>
+                    <p id="statTotalSales" class="text-lg md:text-3xl font-black text-blue-500 truncate">0</p>
+                </div>
+                <div class="glass-card p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem]">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Target</p>
+                    <p id="statTargetSales" class="text-lg md:text-3xl font-black opacity-30 truncate">0</p>
+                </div>
+            </div>
+            <div class="bg-blue-600 p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] shadow-xl text-white flex flex-col justify-center">
+                <p class="text-[9px] font-bold opacity-70 uppercase mb-1">Achievement</p>
+                <p id="statAchSales" class="text-4xl md:text-5xl font-black tracking-tighter">0%</p>
+            </div>
+        </section>
+
+        <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+            <span class="w-1 h-3 bg-orange-500 rounded-full"></span> Event Days
+        </div>
+        <section class="grid grid-cols-2 md:grid-cols-2 gap-3">
+            <div class="glass-card p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border-l-4 border-l-orange-500">
+                <p class="text-[8px] font-bold text-orange-500 uppercase mb-1">Bigbet</p>
+                <p id="statBigBet" class="text-lg md:text-3xl font-black">0/0</p>
+                <p id="statAchBigBet" class="text-2xl md:text-4xl font-black text-orange-500 mt-1">0%</p>
+            </div>
+            <div class="glass-card p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border-l-4 border-l-emerald-500">
+                <p class="text-[8px] font-bold text-emerald-500 uppercase mb-1">Non-Bigbet</p>
+                <p id="statNonBigBet" class="text-lg md:text-3xl font-black">0/0</p>
+                <p id="statAchNonBigBet" class="text-2xl md:text-4xl font-black text-emerald-500 mt-1">0%</p>
+            </div>
+        </section>
+
+        <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+            <span class="w-1 h-3 bg-blue-400 rounded-full"></span> Content Progress
+        </div>
+        <section class="grid grid-cols-2 md:grid-cols-2 gap-3">
+            <div class="glass-card p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border-l-4 border-l-blue-500">
+                <p class="text-[8px] font-bold text-blue-500 uppercase mb-1">Pribadi</p>
+                <p id="statPribadi" class="text-lg md:text-3xl font-black">0/0</p>
+                <p id="statAchPribadi" class="text-2xl md:text-4xl font-black text-blue-500 mt-1">0%</p>
+            </div>
+            <div class="glass-card p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border-l-4 border-l-purple-500">
+                <p class="text-[8px] font-bold text-purple-500 uppercase mb-1">Event</p>
+                <p id="statEvent" class="text-lg md:text-3xl font-black">0/0</p>
+                <p id="statAchEvent" class="text-2xl md:text-4xl font-black text-purple-500 mt-1">0%</p>
+            </div>
+        </section>
+
+        <section class="glass-card rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/20">
+                <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400">Records</h3>
+                <span id="rowCount" class="text-[8px] font-bold bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">0 Data</span>
+            </div>
+            <div class="overflow-x-auto hide-scroll">
+                <table class="w-full text-left text-[10px] min-w-[500px]">
+                    <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 uppercase text-[8px] font-black">
+                        <tr>
+                            <th class="px-4 py-3">PIC</th>
+                            <th class="px-4 py-3">Event / Category</th>
+                            <th class="px-4 py-3 text-right">Days</th>
+                            <th class="px-4 py-3 text-right">Sell Out</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-slate-800/50"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzwIgKIxZO5l1RsZ__ZHwb6qI3JTSuUj01DVahErK-2EkA93fAtRs3GGw5vvR9P6hnH/exec'; 
+        let allData = { summary: [], targets: {}, konten: [] };
+
+        async function fetchData() {
+            try {
+                const res = await fetch(API_URL);
+                allData = await res.json();
+                populateFilters(); updateDashboard(); lucide.createIcons();
+                document.getElementById('loadingOverlay').style.opacity = '0';
+                setTimeout(() => { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('dashboardMain').style.opacity = '1'; }, 500);
+            } catch(e) { console.error(e); }
+        }
+
+        function populateFilters(dataToUse = allData.summary) {
+            const fb = document.getElementById('filterBulan'), fp = document.getElementById('filterPIC');
+            const cb = fb.value || 'Semua Bulan', cp = fp.value || 'Semua PIC';
+            const bS = new Set(['Semua Bulan']), pS = new Set(['Semua PIC']);
+            dataToUse.forEach(i => { bS.add(i.bulan); pS.add(i.pic); });
+            const f = (el, s, c) => { el.innerHTML = ''; s.forEach(v => el.innerHTML += `<option value="${v}" ${v===c?'selected':''}>${v}</option>`); };
+            f(fb, bS, cb); f(fp, pS, cp);
+        }
+
+        function handleFilterChange() {
+            const f_b = document.getElementById('filterBulan').value;
+            let d = allData.summary;
+            if (f_b !== 'Semua Bulan') d = allData.summary.filter(i => i.bulan === f_b);
+            populateFilters(d); updateDashboard();
+        }
+
+        function updateDashboard() {
+            const f_b = document.getElementById('filterBulan').value, f_p = document.getElementById('filterPIC').value;
+            let fil = allData.summary.filter(i => (f_b === 'Semua Bulan' || i.bulan === f_b) && (f_p === 'Semua PIC' || i.pic === f_p));
+            fil.sort((a,b) => (a.type === "BIGBET" ? -1 : 1));
+
+            const aS = fil.reduce((s,i) => s + i.sellOut, 0);
+            const aB = fil.filter(i=>i.type==="BIGBET").reduce((s,i)=>s+i.count, 0);
+            const aN = fil.filter(i=>i.type==="NON-BIGBET").reduce((s,i)=>s+i.count, 0);
+            const aP = allData.konten.filter(k => (f_b === 'Semua Bulan' || k.bulan === f_b) && (f_p === 'Semua PIC' || k.pic === f_p) && k.kategori === "KONTEN PRIBADI").length;
+            const aE = allData.konten.filter(k => (f_b === 'Semua Bulan' || k.bulan === f_b) && (f_p === 'Semua PIC' || k.pic === f_p) && k.kategori === "KONTEN EVENT").length;
+
+            let tS=0, tB=0, tN=0, tP=0, tE=0;
+            if(f_p !== 'Semua PIC') {
+                let t = allData.targets[f_p] || {sellOut:0, bigBet:0, nonBigBet:0, targetPribadi:0, targetEvent:0};
+                tS=t.sellOut; tB=t.bigBet; tN=t.nonBigBet; tP=t.targetPribadi; tE=t.targetEvent;
+            } else {
+                Object.values(allData.targets).forEach(t=>{ tS+=t.sellOut; tB+=t.bigBet; tN+=t.nonBigBet; tP+=t.targetPribadi; tE+=t.targetEvent; });
+            }
+
+            const ach = (a,t) => t===0 ? (a>0?100:0) : ((a/t)*100).toFixed(1);
+            document.getElementById('statTotalSales').innerText = Math.round(aS).toLocaleString('id-ID');
+            document.getElementById('statTargetSales').innerText = Math.round(tS).toLocaleString('id-ID');
+            document.getElementById('statAchSales').innerText = ach(aS, tS) + '%';
+            document.getElementById('statBigBet').innerText = `${aB}/${tB}`;
+            document.getElementById('statAchBigBet').innerText = ach(aB, tB) + '%';
+            document.getElementById('statNonBigBet').innerText = `${aN}/${tN}`;
+            document.getElementById('statAchNonBigBet').innerText = ach(aN, tN) + '%';
+            document.getElementById('statPribadi').innerText = `${aP}/${tP}`;
+            document.getElementById('statAchPribadi').innerText = ach(aP, tP) + '%';
+            document.getElementById('statEvent').innerText = `${aE}/${tE}`;
+            document.getElementById('statAchEvent').innerText = ach(aE, tE) + '%';
+
+            const tb = document.getElementById('tableBody'); tb.innerHTML = '';
+fil.forEach(i => {
+    // Tentukan warna teks kategori biar sinkron sama badge status
+    let textColor = "";
+    let bgColor = "";
+    
+    if (i.type === "BIGBET") {
+        textColor = "text-orange-500";
+        bgColor = "bg-orange-500/10";
+    } else if (i.type === "NON-BIGBET") {
+        textColor = "text-emerald-500";
+        bgColor = "bg-emerald-500/10";
+    } else {
+        textColor = "text-rose-500"; // Warna buat si INVALID
+        bgColor = "bg-rose-500/10";
+    }
+    
+    tb.innerHTML += `
+        <tr class="hover:bg-slate-500/5 transition-colors">
+            <td class="px-4 py-4">
+                <span class="t-main text-blue-500 block">${i.pic}</span>
+                <span class="t-sub block italic">${i.brand} / ${i.bulan}</span>
+            </td>
+            <td class="px-4 py-4">
+                <span class="t-main block">${i.namaEvent}</span>
+                <span class="t-sub italic block">${i.categoryDetail}</span>
+                <span class="text-[9px] font-black tracking-widest uppercase ${textColor} mt-1 block">
+                    ● ${i.type}
+                </span>
+            </td>
+            <td class="px-4 py-4 text-right t-main">${i.hari}</td>
+            <td class="px-4 py-4 text-right t-main text-blue-500">${i.sellOut.toLocaleString('id-ID')}</td>
+        </tr>`;
+});
+            document.getElementById('rowCount').innerText = `${fil.length} Data`;
+        }
+        fetchData();
+    </script>
+</body>
+</html>
