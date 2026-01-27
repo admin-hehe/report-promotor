@@ -90,14 +90,24 @@
                     <div id="dropBulan" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-72 overflow-y-auto hide-scroll"></div>
                 </div>
 
-                <div class="relative">
-                    <label class="absolute -top-2 left-3 bg-slate-100 dark:bg-darkBg px-1 text-[9px] font-extrabold text-slate-400 uppercase z-[120] tracking-tighter">PIC</label>
-                    <button id="btnPIC" onclick="toggleDrop('dropPIC', event)" class="w-full bg-white dark:bg-cardDark border border-slate-300 dark:border-slate-700 p-3.5 rounded-2xl text-[13px] font-bold flex justify-between items-center shadow-sm active:scale-95 transition-transform">
-                        <span id="valPIC" class="truncate text-slate-700 dark:text-slate-200">Semua PIC</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-                    </button>
-                    <div id="dropPIC" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-72 overflow-y-auto hide-scroll"></div>
-                </div>
+<div class="relative">
+    <label class="absolute -top-2 left-3 bg-slate-100 dark:bg-darkBg px-1 text-[9px] font-extrabold text-slate-400 uppercase z-[120] tracking-tighter">PIC</label>
+    <div class="relative group">
+        <input 
+            type="text" 
+            id="inputPIC" 
+            placeholder="Cari PIC..."
+            onfocus="this.select(); toggleDrop('dropPIC', event)"
+            oninput="filterPIC(this.value)"
+            class="w-full bg-white dark:bg-cardDark border border-slate-300 dark:border-slate-700 p-3.5 pl-10 rounded-2xl text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+        >
+        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+        <i data-lucide="chevron-down" class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+    </div>
+    <div id="dropPIC" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-60 overflow-y-auto hide-scroll">
+        </div>
+</div>
+                
             </div>
         </div>
     </header>
@@ -192,6 +202,7 @@ const LOGO_URL = 'https://upload.wikimedia.org/wikipedia/id/4/4c/Paragoncorp-log
 
         let allData = { summary: [], targets: {}, konten: [] };
         let currentFilter = { bulan: '', pic: 'Semua PIC' };
+        let uniquePICs = [];
 
         function initLogo() {
             const container = document.getElementById('logoContainer');
@@ -210,25 +221,61 @@ const LOGO_URL = 'https://upload.wikimedia.org/wikipedia/id/4/4c/Paragoncorp-log
             if (!isShown) el.classList.add('show');
         }
 
-        function closeAllDrops() {
-            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
-        }
+function closeAllDrops() {
+    const drops = document.querySelectorAll('.dropdown-content');
+    drops.forEach(d => d.classList.remove('show'));
+    
+    // Kembalikan list PIC ke full list kalau user tidak jadi milih
+    setTimeout(() => {
+        renderPICOptions(['Semua PIC', ...uniquePICs]);
+    }, 200);
+}
 
-        window.onclick = function(event) {
-            if (!event.target.closest('button')) closeAllDrops();
-        }
+window.onclick = function(event) {
+    if (!event.target.closest('button') && !event.target.closest('input')) {
+        closeAllDrops();
+    }
+}
 
-        function selectOption(type, value) {
-            if (type === 'bulan') {
-                currentFilter.bulan = value;
-                document.getElementById('valBulan').innerText = value;
-            } else {
-                currentFilter.pic = value;
-                document.getElementById('valPIC').innerText = value;
-            }
-            closeAllDrops();
-            updateDashboard();
+window.addEventListener('keydown', function(event) {
+    // Tutup dropdown kalau pencet ESC
+    if (event.key === 'Escape') {
+        closeAllDrops();
+        // Optional: Hilangkan fokus dari input PIC
+        document.getElementById('inputPIC').blur();
+    }
+
+    // Optional: Kalau pencet Enter di input PIC, pilih hasil pertama
+    if (event.key === 'Enter' && document.activeElement.id === 'inputPIC') {
+        const firstOption = document.querySelector('#dropPIC div');
+        if (firstOption) {
+            firstOption.click();
         }
+    }
+});
+
+document.getElementById('inputPIC').addEventListener('blur', function() {
+    // Kasih delay dikit biar fungsi click di dropdown sempet jalan duluan
+    setTimeout(() => {
+        if (this.value === '') {
+            this.value = currentFilter.pic; 
+        }
+    }, 200);
+});
+
+function selectOption(type, value) {
+    if (type === 'bulan') {
+        currentFilter.bulan = value;
+        document.getElementById('valBulan').innerText = value;
+    } else {
+        currentFilter.pic = value;
+        document.getElementById('inputPIC').value = value;
+        // Reset list dropdown ke semula setelah milih
+        renderPICOptions(['Semua PIC', ...uniquePICs]);
+    }
+    closeAllDrops();
+    updateDashboard();
+}
 
         async function fetchData() {
             try {
@@ -339,6 +386,45 @@ const LOGO_URL = 'https://upload.wikimedia.org/wikipedia/id/4/4c/Paragoncorp-log
             
             document.getElementById('rowCount').innerText = fil.length + ' Data';
         }
+        
+function setupInitialFilters() {
+    const db = document.getElementById('dropBulan');
+    const uniqueMonths = [...new Set(allData.summary.map(i => i.bulan))];
+    uniquePICs = [...new Set(allData.summary.map(i => i.pic))].sort(); // Simpan ke global & urutkan
+    
+    const curMonth = new Intl.DateTimeFormat('id-ID', {month: 'long'}).format(new Date());
+    currentFilter.bulan = uniqueMonths.includes(curMonth) ? curMonth : (uniqueMonths.length > 0 ? uniqueMonths[uniqueMonths.length - 1] : '');
+    document.getElementById('valBulan').innerText = currentFilter.bulan || 'Pilih Bulan';
+
+    // Render Dropdown Bulan
+    db.innerHTML = uniqueMonths.map(m => `
+        <div onclick="selectOption('bulan', '${m}')" class="px-5 py-4 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b dark:border-slate-700/50 last:border-0 text-slate-600 dark:text-slate-300">${m}</div>
+    `).join('');
+
+    // Render Dropdown PIC Pertama Kali
+    renderPICOptions(['Semua PIC', ...uniquePICs]);
+    document.getElementById('inputPIC').value = 'Semua PIC';
+}
+
+// Fungsi baru untuk render list PIC
+function renderPICOptions(list) {
+    const dp = document.getElementById('dropPIC');
+    dp.innerHTML = list.map(p => `
+        <div onclick="selectOption('pic', '${p}')" class="px-5 py-4 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b dark:border-slate-700/50 last:border-0 text-slate-600 dark:text-slate-300">${p}</div>
+    `).join('');
+}
+
+// Fungsi filter saat mengetik
+function filterPIC(val) {
+    const filtered = ['Semua PIC', ...uniquePICs].filter(p => 
+        p.toLowerCase().includes(val.toLowerCase())
+    );
+    renderPICOptions(filtered);
+    
+    // Auto show dropdown kalau lagi ngetik
+    const drop = document.getElementById('dropPIC');
+    if (!drop.classList.contains('show')) drop.classList.add('show');
+}
 
         fetchData();
     </script>
