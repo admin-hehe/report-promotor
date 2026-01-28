@@ -285,6 +285,7 @@ function setupInitialFilters() {
             } else {
                 currentFilter.pic = value;
                 document.getElementById('inputPIC').value = value;
+                renderPICOptions(['Semua PIC', ...uniquePICs]);
             }
             closeAllDrops();
             updateDashboard();
@@ -370,19 +371,16 @@ function setupInitialFilters() {
         }
         
 window.addEventListener('keydown', function(event) {
-    // 1. Fungsi ESC untuk tutup dropdown
     if (event.key === 'Escape') {
         closeAllDrops();
         document.getElementById('inputPIC').blur();
     }
 
-    // 2. Fungsi ENTER untuk pilih hasil pencarian pertama
     if (event.key === 'Enter' && document.activeElement.id === 'inputPIC') {
-        // Cari opsi pertama yang muncul di dropdown PIC
         const firstOption = document.querySelector('#dropPIC div');
         if (firstOption) {
-            firstOption.click(); // Simulasi klik pada pilihan pertama
-            document.getElementById('inputPIC').blur(); // Hilangkan fokus biar keyboard HP turun
+            firstOption.click();
+            document.getElementById('inputPIC').blur();
         }
     }
 });
